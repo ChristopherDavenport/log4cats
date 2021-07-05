@@ -66,8 +66,9 @@ class Slf4jLoggerInternalSuite extends CatsEffectSuite {
     val initial = "yellow"
     MDC.put(variable, initial)
 
-    Slf4jLogger
-      .getLogger[IO]
+    Slf4jLogging
+      .forSync[IO]
+      .create
       .info(Map(variable -> "bar"))("A log went here")
       .as(MDC.get(variable))
       .assertEquals(initial)
@@ -91,8 +92,9 @@ class Slf4jLoggerInternalSuite extends CatsEffectSuite {
     val logCanceled = new CountDownLatch(1)
     val finishedLog = new CountDownLatch(1)
 
-    val performLogging = Slf4jLogger
-      .getLogger[IO]
+    val performLogging = Slf4jLogging
+      .forSync[IO]
+      .create
       .info(Map(variable -> "modified")) {
         startedLog.countDown()
         logCanceled.await()

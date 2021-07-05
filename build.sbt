@@ -77,6 +77,7 @@ val catsEffectV = "2.5.1"
 val slf4jV = "1.7.30"
 val munitCatsEffectV = "1.0.3"
 val logbackClassicV = "1.2.3"
+val enclosureV      = "0.1.0"
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
@@ -108,11 +109,17 @@ lazy val core = crossProject(JSPlatform, JVMPlatform)
   .settings(
     name := "log4cats-core",
     libraryDependencies ++= Seq(
-      "org.typelevel" %%% "cats-core" % catsV
+      "org.typelevel" %%% "cats-core" % catsV,
+      "com.lorandszakacs" %%% "enclosure" % enclosureV,
     )
   )
 lazy val coreJVM = core.jvm
-lazy val coreJS = core.js
+lazy val coreJS = core
+  .settings(dottyJsSettings(ThisBuild / crossScalaVersions))
+  .jsSettings(
+    scalaJSLinkerConfig ~= (_.withModuleKind(ModuleKind.CommonJSModule))
+  )
+  .js
 
 lazy val testing = crossProject(JSPlatform, JVMPlatform)
   .settings(commonSettings, releaseSettings)
@@ -156,6 +163,20 @@ lazy val commonSettings = Seq(
     "org.typelevel" %%% "munit-cats-effect-2" % munitCatsEffectV % Test,
   ),
   testFrameworks += new TestFramework("munit.Framework"),
+  // major scala version folders do not work properly for shared sources between JS/JVM
+  // see: https://github.com/sbt/sbt/issues/5895#issuecomment-739510744
+  Compile / unmanagedSourceDirectories ++= {
+    val major = if (isDotty.value) "-3" else "-2"
+    List(CrossType.Pure, CrossType.Full).flatMap(
+      _.sharedSrcDir(baseDirectory.value, "main").toList.map(f => file(f.getPath + major))
+    )
+  },
+  Test / unmanagedSourceDirectories ++= {
+    val major = if (isDotty.value) "-3" else "-2"
+    List(CrossType.Pure, CrossType.Full).flatMap(
+      _.sharedSrcDir(baseDirectory.value, "test").toList.map(f => file(f.getPath + major))
+    )
+  }
 )
 
 lazy val releaseSettings = {

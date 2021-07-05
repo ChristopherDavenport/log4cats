@@ -17,7 +17,7 @@
 package org.typelevel.log4cats.slf4j
 
 import cats.effect._
-import org.typelevel.log4cats.SelfAwareStructuredLogger
+import org.typelevel.log4cats._
 
 class Slf4jLoggerSimpleClassMacroTest {
   def loggerF[F[_]: Sync]: F[SelfAwareStructuredLogger[F]] = Slf4jLogger.create[F]
